@@ -126,8 +126,24 @@ bool PongMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			(evt.motion.y + 0.5f) / window_size.y *-2.0f + 1.0f
 		);
 		left_paddle.y = (clip_to_court * glm::vec3(clip_mouse, 1.0f)).y;
+		return true;
 	}
 
+	// move the middle wall
+	if (evt.type == SDL_KEYDOWN) {
+		if (evt.key.keysym.sym == SDLK_UP) {
+			if (mid_wall.y + mid_wall_radius.y < court_radius.y) {
+				mid_wall.y += 0.2f;
+			}
+		}
+		else if (evt.key.keysym.sym == SDLK_DOWN) {
+			if (mid_wall.y - mid_wall_radius.y > -court_radius.y) {
+				mid_wall.y -= 0.2f;
+			}
+		}
+		return true;
+	}
+	
 	return false;
 }
 
@@ -202,8 +218,40 @@ void PongMode::update(float elapsed) {
 			ball_velocity.y = glm::mix(ball_velocity.y, vel, 0.75f);
 		}
 	};
+
+	auto mid_wall_vs_ball = [this]() {
+		//compute area of overlap
+		glm::vec2 min = glm::max(mid_wall - mid_wall_radius, ball - ball_radius);
+		glm::vec2 max = glm::min(mid_wall + mid_wall_radius, ball + ball_radius);
+
+		//if no overlap, no collision:
+		if (min.x > max.x || min.y > max.y) return;
+
+		if (max.x - min.x > max.y - min.y) {
+			if (ball.y > mid_wall.y) {
+				ball.y = mid_wall.y + mid_wall_radius.y + ball_radius.y;
+				ball_velocity.y = std::abs(ball_velocity.y);
+			} else {
+				ball.y = mid_wall.y - mid_wall_radius.y - ball_radius.y;
+				ball_velocity.y = -std::abs(ball_velocity.y);
+			}
+		} else {
+			if (ball.x > mid_wall.x) {
+				ball.x = mid_wall.x + mid_wall_radius.x + ball_radius.x;
+				ball_velocity.x = std::abs(ball_velocity.x);
+			} else {
+				ball.x = mid_wall.x - mid_wall_radius.x - ball_radius.x;
+				ball_velocity.x = -std::abs(ball_velocity.x);
+			}
+			float vel = (ball.y - mid_wall.y) / (mid_wall_radius.y + ball_radius.y);
+			ball_velocity.y = glm::mix(ball_velocity.y, vel, 0.75f);
+		}
+	};
+
 	paddle_vs_ball(left_paddle);
 	paddle_vs_ball(right_paddle);
+
+	mid_wall_vs_ball();
 
 	//court walls:
 	if (ball.y > court_radius.y - ball_radius.y) {
@@ -331,6 +379,9 @@ void PongMode::draw(glm::uvec2 const &drawable_size) {
 	draw_rectangle(glm::vec2( 0.0f,-court_radius.y-wall_radius), glm::vec2(court_radius.x, wall_radius), fg_color);
 	draw_rectangle(glm::vec2( 0.0f, court_radius.y+wall_radius), glm::vec2(court_radius.x, wall_radius), fg_color);
 
+	//middle walls;
+	draw_rectangle(mid_wall, mid_wall_radius, fg_color);
+	
 	//paddles:
 	draw_rectangle(left_paddle, paddle_radius, fg_color);
 	draw_rectangle(right_paddle, paddle_radius, fg_color);
