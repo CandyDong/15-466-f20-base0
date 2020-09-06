@@ -126,23 +126,21 @@ bool PongMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			(evt.motion.y + 0.5f) / window_size.y *-2.0f + 1.0f
 		);
 		left_paddle.y = (clip_to_court * glm::vec3(clip_mouse, 1.0f)).y;
-		return true;
 	}
 
-	// move the middle wall
-	if (evt.type == SDL_KEYDOWN) {
-		if (evt.key.keysym.sym == SDLK_UP) {
-			if (mid_wall.y + mid_wall_radius.y < court_radius.y) {
-				mid_wall.y += 0.2f;
-			}
-		}
-		else if (evt.key.keysym.sym == SDLK_DOWN) {
-			if (mid_wall.y - mid_wall_radius.y > -court_radius.y) {
-				mid_wall.y -= 0.2f;
-			}
-		}
-		return true;
-	}
+	// // move the middle wall
+	// if (evt.type == SDL_KEYDOWN) {
+	// 	if (evt.key.keysym.sym == SDLK_w) {
+	// 		if (mid_wall.y + mid_wall_radius.y < court_radius.y) {
+	// 			mid_wall.y += 0.2f;
+	// 		}
+	// 	}
+	// 	else if (evt.key.keysym.sym == SDLK_s) {
+	// 		if (mid_wall.y - mid_wall_radius.y > -court_radius.y) {
+	// 			mid_wall.y -= 0.2f;
+	// 		}
+	// 	}
+	// }
 	
 	return false;
 }
@@ -219,31 +217,35 @@ void PongMode::update(float elapsed) {
 		}
 	};
 
-	auto mid_wall_vs_ball = [this]() {
+	auto mid_wall_vs_ball = [this](int i) {
 		//compute area of overlap
-		glm::vec2 min = glm::max(mid_wall - mid_wall_radius, ball - ball_radius);
-		glm::vec2 max = glm::min(mid_wall + mid_wall_radius, ball + ball_radius);
+		glm::vec2 min = glm::max(mid_walls[i] - mid_wall_radius, ball - ball_radius);
+		glm::vec2 max = glm::min(mid_walls[i] + mid_wall_radius, ball + ball_radius);
 
 		//if no overlap, no collision:
 		if (min.x > max.x || min.y > max.y) return;
 
+		if (max.y < mid_holes[i].y + mid_hole_radius.y && min.y > mid_holes[i].y - mid_hole_radius.y) {
+			return;
+		}
+
 		if (max.x - min.x > max.y - min.y) {
-			if (ball.y > mid_wall.y) {
-				ball.y = mid_wall.y + mid_wall_radius.y + ball_radius.y;
+			if (ball.y > mid_walls[i].y) {
+				ball.y = mid_walls[i].y + mid_wall_radius.y + ball_radius.y;
 				ball_velocity.y = std::abs(ball_velocity.y);
 			} else {
-				ball.y = mid_wall.y - mid_wall_radius.y - ball_radius.y;
+				ball.y = mid_walls[i].y - mid_wall_radius.y - ball_radius.y;
 				ball_velocity.y = -std::abs(ball_velocity.y);
 			}
 		} else {
-			if (ball.x > mid_wall.x) {
-				ball.x = mid_wall.x + mid_wall_radius.x + ball_radius.x;
+			if (ball.x > mid_walls[i].x) {
+				ball.x = mid_walls[i].x + mid_wall_radius.x + ball_radius.x;
 				ball_velocity.x = std::abs(ball_velocity.x);
 			} else {
-				ball.x = mid_wall.x - mid_wall_radius.x - ball_radius.x;
+				ball.x = mid_walls[i].x - mid_wall_radius.x - ball_radius.x;
 				ball_velocity.x = -std::abs(ball_velocity.x);
 			}
-			float vel = (ball.y - mid_wall.y) / (mid_wall_radius.y + ball_radius.y);
+			float vel = (ball.y - mid_walls[i].y) / (mid_walls[i].y + ball_radius.y);
 			ball_velocity.y = glm::mix(ball_velocity.y, vel, 0.75f);
 		}
 	};
@@ -251,7 +253,9 @@ void PongMode::update(float elapsed) {
 	paddle_vs_ball(left_paddle);
 	paddle_vs_ball(right_paddle);
 
-	mid_wall_vs_ball();
+	for (int i = 0; i < mid_walls.size(); i++) {
+		mid_wall_vs_ball(i);
+	}
 
 	//court walls:
 	if (ball.y > court_radius.y - ball_radius.y) {
@@ -303,6 +307,8 @@ void PongMode::draw(glm::uvec2 const &drawable_size) {
 	#define HEX_TO_U8VEC4( HX ) (glm::u8vec4( (HX >> 24) & 0xff, (HX >> 16) & 0xff, (HX >> 8) & 0xff, (HX) & 0xff ))
 	const glm::u8vec4 bg_color = HEX_TO_U8VEC4(0x171714ff);
 	const glm::u8vec4 fg_color = HEX_TO_U8VEC4(0xd1bb54ff);
+	// const glm::u8vec4 transparent = HEX_TO_U8VEC4(0x00000000);
+	// const glm::u8vec4 white = HEX_TO_U8VEC4(0xffffffff);
 	const glm::u8vec4 shadow_color = HEX_TO_U8VEC4(0x604d29ff);
 	const std::vector< glm::u8vec4 > rainbow_colors = {
 		HEX_TO_U8VEC4(0x604d29ff), HEX_TO_U8VEC4(0x624f29fc), HEX_TO_U8VEC4(0x69542df2),
@@ -317,7 +323,6 @@ void PongMode::draw(glm::uvec2 const &drawable_size) {
 	#undef HEX_TO_U8VEC4
 
 	//other useful drawing constants:
-	const float wall_radius = 0.05f;
 	const float shadow_offset = 0.07f;
 	const float padding = 0.14f; //padding between outside of walls and edge of window
 
@@ -351,25 +356,25 @@ void PongMode::draw(glm::uvec2 const &drawable_size) {
 	draw_rectangle(ball+s, ball_radius, shadow_color);
 
 	//ball's trail:
-	if (ball_trail.size() >= 2) {
-		//start ti at second element so there is always something before it to interpolate from:
-		std::deque< glm::vec3 >::iterator ti = ball_trail.begin() + 1;
-		//draw trail from oldest-to-newest:
-		for (uint32_t i = uint32_t(rainbow_colors.size())-1; i < rainbow_colors.size(); --i) {
-			//time at which to draw the trail element:
-			float t = (i + 1) / float(rainbow_colors.size()) * trail_length;
-			//advance ti until 'just before' t:
-			while (ti != ball_trail.end() && ti->z > t) ++ti;
-			//if we ran out of tail, stop drawing:
-			if (ti == ball_trail.end()) break;
-			//interpolate between previous and current trail point to the correct time:
-			glm::vec3 a = *(ti-1);
-			glm::vec3 b = *(ti);
-			glm::vec2 at = (t - a.z) / (b.z - a.z) * (glm::vec2(b) - glm::vec2(a)) + glm::vec2(a);
-			//draw:
-			draw_rectangle(at, ball_radius, rainbow_colors[i]);
-		}
-	}
+	// if (ball_trail.size() >= 2) {
+	// 	//start ti at second element so there is always something before it to interpolate from:
+	// 	std::deque< glm::vec3 >::iterator ti = ball_trail.begin() + 1;
+	// 	//draw trail from oldest-to-newest:
+	// 	for (uint32_t i = uint32_t(rainbow_colors.size())-1; i < rainbow_colors.size(); --i) {
+	// 		//time at which to draw the trail element:
+	// 		float t = (i + 1) / float(rainbow_colors.size()) * trail_length;
+	// 		//advance ti until 'just before' t:
+	// 		while (ti != ball_trail.end() && ti->z > t) ++ti;
+	// 		//if we ran out of tail, stop drawing:
+	// 		if (ti == ball_trail.end()) break;
+	// 		//interpolate between previous and current trail point to the correct time:
+	// 		glm::vec3 a = *(ti-1);
+	// 		glm::vec3 b = *(ti);
+	// 		glm::vec2 at = (t - a.z) / (b.z - a.z) * (glm::vec2(b) - glm::vec2(a)) + glm::vec2(a);
+	// 		//draw:
+	// 		draw_rectangle(at, ball_radius, rainbow_colors[i]);
+	// 	}
+	// }
 
 	//solid objects:
 
@@ -380,13 +385,19 @@ void PongMode::draw(glm::uvec2 const &drawable_size) {
 	draw_rectangle(glm::vec2( 0.0f, court_radius.y+wall_radius), glm::vec2(court_radius.x, wall_radius), fg_color);
 
 	//middle walls;
-	draw_rectangle(mid_wall, mid_wall_radius, fg_color);
+	for (int i = 0; i < mid_walls.size(); i++) {
+		draw_rectangle(glm::vec2(mid_walls[i]), mid_wall_radius, rainbow_colors[i]);
+	}
+
+	//middle holes;
+	for (int i = 0; i < mid_walls.size(); i++) {
+		draw_rectangle(glm::vec2(mid_holes[i]), mid_hole_radius, bg_color);
+	}
 	
 	//paddles:
 	draw_rectangle(left_paddle, paddle_radius, fg_color);
 	draw_rectangle(right_paddle, paddle_radius, fg_color);
 	
-
 	//ball:
 	draw_rectangle(ball, ball_radius, fg_color);
 

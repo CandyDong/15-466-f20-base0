@@ -26,12 +26,14 @@ struct PongMode : Mode {
 	glm::vec2 court_radius = glm::vec2(7.0f, 5.0f);
 	glm::vec2 paddle_radius = glm::vec2(0.2f, 1.0f);
 	glm::vec2 ball_radius = glm::vec2(0.2f, 0.2f);
-	glm::vec2 mid_wall_radius = glm::vec2(0.05f, 1.0f);
-	float mid_wall_interval = 0.5f;
+	float wall_radius = 0.05f;
+	glm::vec2 mid_wall_radius = glm::vec2(0.2f, 5.0f);
+	std::vector< glm::vec2 > mid_walls = {glm::vec2(-2.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec2(4.0f, 0.0f)};
+	glm::vec2 mid_hole_radius = glm::vec2(0.2f, 0.4f);
+	std::vector<glm::vec2> mid_holes = {glm::vec2(-2.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec2(4.0f, 0.0f)};
 
 	glm::vec2 left_paddle = glm::vec2(-court_radius.x + 0.5f, 0.0f);
 	glm::vec2 right_paddle = glm::vec2( court_radius.x - 0.5f, 0.0f);
-	glm::vec2 mid_wall = glm::vec2(0.0f, -court_radius.y+mid_wall_radius.y);
 
 	glm::vec2 ball = glm::vec2(0.0f, 0.0f);
 	glm::vec2 ball_velocity = glm::vec2(-1.0f, 0.0f);
