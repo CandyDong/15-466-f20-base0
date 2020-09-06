@@ -128,19 +128,31 @@ bool PongMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		left_paddle.y = (clip_to_court * glm::vec3(clip_mouse, 1.0f)).y;
 	}
 
-	// // move the middle wall
-	// if (evt.type == SDL_KEYDOWN) {
-	// 	if (evt.key.keysym.sym == SDLK_w) {
-	// 		if (mid_wall.y + mid_wall_radius.y < court_radius.y) {
-	// 			mid_wall.y += 0.2f;
-	// 		}
-	// 	}
-	// 	else if (evt.key.keysym.sym == SDLK_s) {
-	// 		if (mid_wall.y - mid_wall_radius.y > -court_radius.y) {
-	// 			mid_wall.y -= 0.2f;
-	// 		}
-	// 	}
-	// }
+	// move the middle wall
+	if (evt.type == SDL_KEYDOWN) {
+		if (evt.key.keysym.sym == SDLK_UP) {
+			if (mid_holes[highlighted].y + mid_hole_radius.y < court_radius.y) {
+				mid_holes[highlighted].y += 0.2f;
+			}
+		}
+		else if (evt.key.keysym.sym == SDLK_DOWN) {
+			if (mid_holes[highlighted].y - mid_hole_radius.y > -court_radius.y) {
+				mid_holes[highlighted].y -= 0.2f;
+			}
+		}
+		else if (evt.key.keysym.sym == SDLK_LEFT) {
+			highlighted--;
+			if (highlighted < 0) {
+				highlighted = mid_walls.size();
+			}
+		}
+		else if (evt.key.keysym.sym == SDLK_RIGHT) {
+			highlighted++;
+			if (highlighted >= mid_walls.size()) {
+				highlighted = 0;
+			}
+		}
+	}
 	
 	return false;
 }
