@@ -29,7 +29,7 @@ struct PongMode : Mode {
 	float wall_radius = 0.05f;
 	glm::vec2 mid_wall_radius = glm::vec2(0.2f, 5.0f);
 	std::vector< glm::vec2 > mid_walls = {glm::vec2(-3.5f, 0.0f), glm::vec2(3.5f, 0.0f)};
-	glm::vec2 mid_hole_radius = glm::vec2(0.2f, 2.0f);
+	glm::vec2 mid_hole_radius = glm::vec2(0.2f, 1.5f);
 	std::vector<glm::vec2> mid_holes = {glm::vec2(-3.5f, 0.0f), glm::vec2(3.5f, 0.0f)};
 	int highlighted = 0;
 
@@ -48,7 +48,7 @@ struct PongMode : Mode {
 
 	//----- pretty rainbow trails -----
 
-	float trail_length = 1.3f;
+	float trail_length = 1.0f;
 	std::deque< glm::vec3 > ball_trail; //stores (x,y,age), oldest elements first
 
 	//----- opengl assets / helpers ------

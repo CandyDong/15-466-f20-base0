@@ -191,7 +191,7 @@ void PongMode::update(float elapsed) {
 	float speed_multiplier = 4.0f * std::pow(2.0f, (left_score + right_score) / 4.0f);
 
 	//velocity cap, though (otherwise ball can pass through paddles):
-	speed_multiplier = std::min(speed_multiplier, 6.0f);
+	speed_multiplier = std::min(speed_multiplier, 10.0f);
 
 	ball += elapsed * speed_multiplier * ball_velocity;
 
@@ -252,7 +252,7 @@ void PongMode::update(float elapsed) {
 			ball.x = mid_walls[i].x - mid_wall_radius.x - ball_radius.x;
 			ball_velocity.x = -std::abs(ball_velocity.x);
 		}
-		
+
 	};
 	for (int i = 0; i < mid_walls.size(); i++) {
 		mid_wall_vs_ball(i);
@@ -304,10 +304,10 @@ void PongMode::update(float elapsed) {
 	if (refresh) {
 		ball_trail.clear();
 		ball_is_left = !ball_is_left;
-		ball = glm::vec2(0.0f, 0.0f);
-		// ball = ((mt() / float(mt.max())) * 2.0f - 1.0f) * court_radius;
-		ball_velocity = glm::vec2(-1.0f, 0.0f);
-		// ball_velocity = glm::vec2(((mt() / float(mt.max())) * 2.0f - 1.0f), 0.0f);
+		// ball = glm::vec2(0.0f, 0.0f);
+		ball = mt() / float(mt.max()) * glm::vec2(3.0f, 2.0f);
+		// ball_velocity = glm::vec2(-1.0f, 0.0f);
+		ball_velocity = glm::vec2(ball_velocity.x/std::abs(ball_velocity.x), 0.0f);
 		// printf("Update: ball at (%f, %f)", ball.x, ball.y);
 		refresh = false;
 		return;
@@ -332,10 +332,11 @@ void PongMode::draw(glm::uvec2 const &drawable_size) {
 	#define HEX_TO_U8VEC4( HX ) (glm::u8vec4( (HX >> 24) & 0xff, (HX >> 16) & 0xff, (HX >> 8) & 0xff, (HX) & 0xff ))
 	const glm::u8vec4 bg_color = HEX_TO_U8VEC4(0x171714ff);
 	const glm::u8vec4 fg_color = HEX_TO_U8VEC4(0xd1bb54ff);
-	// const glm::u8vec4 transparent = HEX_TO_U8VEC4(0x00000000);
-	const glm::u8vec4 white = HEX_TO_U8VEC4(0xffffffff);
+	// const glm::u8vec4 white = HEX_TO_U8VEC4(0xffffffff);
 	// const glm::u8vec4 black = HEX_TO_U8VEC4(0x000000ff);
-	const glm::u8vec4 shadow_color = HEX_TO_U8VEC4(0x604d29ff);
+	const glm::u8vec4 left_color = HEX_TO_U8VEC4(0xB43757ff);
+	const glm::u8vec4 right_color = HEX_TO_U8VEC4(0x7852A9ff);
+	// const glm::u8vec4 shadow_color = HEX_TO_U8VEC4(0x604d29ff);
 	const std::vector< glm::u8vec4 > rainbow_colors = {
 		HEX_TO_U8VEC4(0x604d29ff), HEX_TO_U8VEC4(0x624f29fc), HEX_TO_U8VEC4(0x69542df2),
 		HEX_TO_U8VEC4(0x6a552df1), HEX_TO_U8VEC4(0x6b562ef0), HEX_TO_U8VEC4(0x6b562ef0),
@@ -349,7 +350,7 @@ void PongMode::draw(glm::uvec2 const &drawable_size) {
 	#undef HEX_TO_U8VEC4
 
 	//other useful drawing constants:
-	const float shadow_offset = 0.07f;
+	// const float shadow_offset = 0.07f;
 	const float padding = 0.14f; //padding between outside of walls and edge of window
 
 	//---- compute vertices to draw ----
@@ -369,17 +370,24 @@ void PongMode::draw(glm::uvec2 const &drawable_size) {
 		vertices.emplace_back(glm::vec3(center.x-radius.x, center.y+radius.y, 0.0f), color, glm::vec2(0.5f, 0.5f));
 	};
 
-	//shadows for everything (except the trail):
+	//solid objects:
 
-	glm::vec2 s = glm::vec2(0.0f,-shadow_offset);
+	//walls:
+	draw_rectangle(glm::vec2(-court_radius.x-wall_radius, 0.0f), glm::vec2(wall_radius, court_radius.y + 2.0f * wall_radius), fg_color);
+	draw_rectangle(glm::vec2( court_radius.x+wall_radius, 0.0f), glm::vec2(wall_radius, court_radius.y + 2.0f * wall_radius), fg_color);
+	draw_rectangle(glm::vec2( 0.0f,-court_radius.y-wall_radius), glm::vec2(court_radius.x, wall_radius), fg_color);
+	draw_rectangle(glm::vec2( 0.0f, court_radius.y+wall_radius), glm::vec2(court_radius.x, wall_radius), fg_color);
 
-	draw_rectangle(glm::vec2(-court_radius.x-wall_radius, 0.0f)+s, glm::vec2(wall_radius, court_radius.y + 2.0f * wall_radius), shadow_color);
-	draw_rectangle(glm::vec2( court_radius.x+wall_radius, 0.0f)+s, glm::vec2(wall_radius, court_radius.y + 2.0f * wall_radius), shadow_color);
-	draw_rectangle(glm::vec2( 0.0f,-court_radius.y-wall_radius)+s, glm::vec2(court_radius.x, wall_radius), shadow_color);
-	draw_rectangle(glm::vec2( 0.0f, court_radius.y+wall_radius)+s, glm::vec2(court_radius.x, wall_radius), shadow_color);
-	draw_rectangle(left_paddle+s, paddle_radius, shadow_color);
-	draw_rectangle(right_paddle+s, paddle_radius, shadow_color);
-	draw_rectangle(ball+s, ball_radius, shadow_color);
+	//paddles:
+	draw_rectangle(left_paddle, paddle_radius, left_color);
+	draw_rectangle(right_paddle, paddle_radius, right_color);
+	
+	//ball:
+	if (ball_is_left) {
+		draw_rectangle(glm::vec2(ball), ball_radius, left_color);
+	} else {
+		draw_rectangle(glm::vec2(ball), ball_radius, right_color);
+	}
 
 	//ball's trail:
 	if (ball_trail.size() >= 2) {
@@ -402,43 +410,23 @@ void PongMode::draw(glm::uvec2 const &drawable_size) {
 		}
 	}
 
-	//solid objects:
-
-	//walls:
-	draw_rectangle(glm::vec2(-court_radius.x-wall_radius, 0.0f), glm::vec2(wall_radius, court_radius.y + 2.0f * wall_radius), fg_color);
-	draw_rectangle(glm::vec2( court_radius.x+wall_radius, 0.0f), glm::vec2(wall_radius, court_radius.y + 2.0f * wall_radius), fg_color);
-	draw_rectangle(glm::vec2( 0.0f,-court_radius.y-wall_radius), glm::vec2(court_radius.x, wall_radius), fg_color);
-	draw_rectangle(glm::vec2( 0.0f, court_radius.y+wall_radius), glm::vec2(court_radius.x, wall_radius), fg_color);
+	//middle holes;
+	for (int i = 0; i < mid_walls.size(); i++) {
+		draw_rectangle(glm::vec2(mid_holes[i]), mid_hole_radius, bg_color);
+	}
 
 	//middle walls;
 	for (int i = 0; i < mid_walls.size(); i++) {
 		draw_rectangle(glm::vec2(mid_walls[i]), mid_wall_radius, rainbow_colors[i]);
 	}
-
-	//middle holes;
-	for (int i = 0; i < mid_walls.size(); i++) {
-		draw_rectangle(glm::vec2(mid_holes[i]), mid_hole_radius, bg_color);
-	}
 	
-	//paddles:
-	draw_rectangle(left_paddle, paddle_radius, fg_color);
-	draw_rectangle(right_paddle, paddle_radius, white);
-	
-	//ball:
-	if (ball_is_left) {
-		draw_rectangle(glm::vec2(ball), ball_radius, fg_color);
-	} else {
-		draw_rectangle(glm::vec2(ball), ball_radius, white);
-	}
-	
-
 	//scores:
 	glm::vec2 score_radius = glm::vec2(0.1f, 0.1f);
 	for (uint32_t i = 0; i < left_score; ++i) {
-		draw_rectangle(glm::vec2( -court_radius.x + (2.0f + 3.0f * i) * score_radius.x, court_radius.y + 2.0f * wall_radius + 2.0f * score_radius.y), score_radius, fg_color);
+		draw_rectangle(glm::vec2( -court_radius.x + (2.0f + 3.0f * i) * score_radius.x, court_radius.y + 2.0f * wall_radius + 2.0f * score_radius.y), score_radius, left_color);
 	}
 	for (uint32_t i = 0; i < right_score; ++i) {
-		draw_rectangle(glm::vec2( court_radius.x - (2.0f + 3.0f * i) * score_radius.x, court_radius.y + 2.0f * wall_radius + 2.0f * score_radius.y), score_radius, fg_color);
+		draw_rectangle(glm::vec2( court_radius.x - (2.0f + 3.0f * i) * score_radius.x, court_radius.y + 2.0f * wall_radius + 2.0f * score_radius.y), score_radius, right_color);
 	}
 
 
@@ -489,12 +477,14 @@ void PongMode::draw(glm::uvec2 const &drawable_size) {
 	//clear the color buffer:
 	glClearColor(bg_color.r / 255.0f, bg_color.g / 255.0f, bg_color.b / 255.0f, bg_color.a / 255.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);  
 
 	//use alpha blending:
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//don't use the depth test:
-	glDisable(GL_DEPTH_TEST);
+	// glDisable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 
 	//upload vertices to vertex_buffer:
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer); //set vertex_buffer as current
