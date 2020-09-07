@@ -131,23 +131,23 @@ bool PongMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 	// move the middle wall
 	if (evt.type == SDL_KEYDOWN) {
-		if (evt.key.keysym.sym == SDLK_UP) {
+		if (evt.key.keysym.sym == SDLK_w) {
 			if (mid_holes[highlighted].y + mid_hole_radius.y < court_radius.y) {
 				mid_holes[highlighted].y += 0.2f;
 			}
 		}
-		else if (evt.key.keysym.sym == SDLK_DOWN) {
+		else if (evt.key.keysym.sym == SDLK_s) {
 			if (mid_holes[highlighted].y - mid_hole_radius.y > -court_radius.y) {
 				mid_holes[highlighted].y -= 0.2f;
 			}
 		}
-		else if (evt.key.keysym.sym == SDLK_LEFT) {
+		else if (evt.key.keysym.sym == SDLK_a) {
 			highlighted--;
 			if (highlighted < 0) {
 				highlighted = mid_walls.size();
 			}
 		}
-		else if (evt.key.keysym.sym == SDLK_RIGHT) {
+		else if (evt.key.keysym.sym == SDLK_d) {
 			highlighted++;
 			if (highlighted >= mid_walls.size()) {
 				highlighted = 0;
@@ -244,26 +244,15 @@ void PongMode::update(float elapsed) {
 		if (max.y < mid_holes[i].y + mid_hole_radius.y && min.y > mid_holes[i].y - mid_hole_radius.y) {
 			return;
 		}
-
-		if (max.x - min.x > max.y - min.y) {
-			if (ball.y > mid_walls[i].y) {
-				ball.y = mid_walls[i].y + mid_wall_radius.y + ball_radius.y;
-				ball_velocity.y = std::abs(ball_velocity.y);
-			} else {
-				ball.y = mid_walls[i].y - mid_wall_radius.y - ball_radius.y;
-				ball_velocity.y = -std::abs(ball_velocity.y);
-			}
+		
+		if (ball.x > mid_walls[i].x) {
+			ball.x = mid_walls[i].x + mid_wall_radius.x + ball_radius.x;
+			ball_velocity.x = std::abs(ball_velocity.x);
 		} else {
-			if (ball.x > mid_walls[i].x) {
-				ball.x = mid_walls[i].x + mid_wall_radius.x + ball_radius.x;
-				ball_velocity.x = std::abs(ball_velocity.x);
-			} else {
-				ball.x = mid_walls[i].x - mid_wall_radius.x - ball_radius.x;
-				ball_velocity.x = -std::abs(ball_velocity.x);
-			}
-			float vel = (ball.y - mid_walls[i].y) / (mid_walls[i].y + ball_radius.y);
-			ball_velocity.y = glm::mix(ball_velocity.y, vel, 0.75f);
+			ball.x = mid_walls[i].x - mid_wall_radius.x - ball_radius.x;
+			ball_velocity.x = -std::abs(ball_velocity.x);
 		}
+		
 	};
 	for (int i = 0; i < mid_walls.size(); i++) {
 		mid_wall_vs_ball(i);
@@ -345,7 +334,7 @@ void PongMode::draw(glm::uvec2 const &drawable_size) {
 	const glm::u8vec4 fg_color = HEX_TO_U8VEC4(0xd1bb54ff);
 	// const glm::u8vec4 transparent = HEX_TO_U8VEC4(0x00000000);
 	const glm::u8vec4 white = HEX_TO_U8VEC4(0xffffffff);
-	const glm::u8vec4 black = HEX_TO_U8VEC4(0x000000ff);
+	// const glm::u8vec4 black = HEX_TO_U8VEC4(0x000000ff);
 	const glm::u8vec4 shadow_color = HEX_TO_U8VEC4(0x604d29ff);
 	const std::vector< glm::u8vec4 > rainbow_colors = {
 		HEX_TO_U8VEC4(0x604d29ff), HEX_TO_U8VEC4(0x624f29fc), HEX_TO_U8VEC4(0x69542df2),
@@ -433,11 +422,11 @@ void PongMode::draw(glm::uvec2 const &drawable_size) {
 	
 	//paddles:
 	draw_rectangle(left_paddle, paddle_radius, fg_color);
-	draw_rectangle(right_paddle, paddle_radius, fg_color);
+	draw_rectangle(right_paddle, paddle_radius, white);
 	
 	//ball:
 	if (ball_is_left) {
-		draw_rectangle(glm::vec2(ball), ball_radius, black);
+		draw_rectangle(glm::vec2(ball), ball_radius, fg_color);
 	} else {
 		draw_rectangle(glm::vec2(ball), ball_radius, white);
 	}
