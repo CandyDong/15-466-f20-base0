@@ -31,7 +31,6 @@ struct PongMode : Mode {
 	std::vector< glm::vec2 > mid_walls = {glm::vec2(-3.5f, 0.0f), glm::vec2(3.5f, 0.0f)};
 	glm::vec2 mid_hole_radius = glm::vec2(0.2f, 1.5f);
 	std::vector<glm::vec2> mid_holes = {glm::vec2(-3.5f, 0.0f), glm::vec2(3.5f, 0.0f)};
-	int highlighted = 0;
 
 	glm::vec2 left_paddle = glm::vec2(-court_radius.x + 0.2f, 0.0f);
 	glm::vec2 right_paddle = glm::vec2( court_radius.x - 0.2f, 0.0f);

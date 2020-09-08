@@ -132,25 +132,13 @@ bool PongMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	// move the middle wall
 	if (evt.type == SDL_KEYDOWN) {
 		if (evt.key.keysym.sym == SDLK_w) {
-			if (mid_holes[highlighted].y + mid_hole_radius.y < court_radius.y) {
-				mid_holes[highlighted].y += 0.2f;
+			if (mid_holes[0].y + mid_hole_radius.y < court_radius.y) {
+				mid_holes[0].y += 0.2f;
 			}
 		}
 		else if (evt.key.keysym.sym == SDLK_s) {
-			if (mid_holes[highlighted].y - mid_hole_radius.y > -court_radius.y) {
-				mid_holes[highlighted].y -= 0.2f;
-			}
-		}
-		else if (evt.key.keysym.sym == SDLK_a) {
-			highlighted--;
-			if (highlighted < 0) {
-				highlighted = mid_walls.size();
-			}
-		}
-		else if (evt.key.keysym.sym == SDLK_d) {
-			highlighted++;
-			if (highlighted >= mid_walls.size()) {
-				highlighted = 0;
+			if (mid_holes[0].y - mid_hole_radius.y > -court_radius.y) {
+				mid_holes[0].y -= 0.2f;
 			}
 		}
 	}
@@ -171,11 +159,27 @@ void PongMode::update(float elapsed) {
 			ai_offset_update = (mt() / float(mt.max())) * 0.5f + 0.5f;
 			ai_offset = (mt() / float(mt.max())) * 2.5f - 1.25f;
 		}
-		if (right_paddle.y < ball.y + ai_offset) {
-			right_paddle.y = std::min(ball.y + ai_offset, right_paddle.y + 2.0f * elapsed);
-		} else {
+		if (((right_paddle.y < ball.y + ai_offset) && (ball_is_left)) ||
+			((right_paddle.y > ball.y + ai_offset) && (!ball_is_left))) {
 			right_paddle.y = std::max(ball.y + ai_offset, right_paddle.y - 2.0f * elapsed);
+			
+		} else {
+			right_paddle.y = std::max(ball.y + ai_offset, right_paddle.y + 2.0f * elapsed);
+			
 		}
+
+		if (mid_holes[1].y < ball.y + ai_offset) {
+			mid_holes[1].y = std::min(ball.y + ai_offset, mid_holes[1].y + 2.0f * elapsed);
+			if (mid_holes[0].y + mid_hole_radius.y > court_radius.y) {
+				mid_holes[0].y = court_radius.y - mid_hole_radius.y;
+			}
+		} else {
+			mid_holes[1].y = std::max(ball.y + ai_offset, mid_holes[1].y - 2.0f * elapsed);
+			if (mid_holes[0].y - mid_hole_radius.y < -court_radius.y) {
+				mid_holes[0].y = court_radius.y + mid_hole_radius.y;
+			}
+		}
+
 	}
 
 	//clamp paddles to court:
